@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 import copy
 import os
@@ -9,14 +9,11 @@ import subprocess
 import numpy as np
 import open3d as o3
 import scipy.special
-
-import raytracing as rt
-
+import ray_tracing as rt
 
 tmpdir = 'tmp'
 scanformat = 'ply'
 occupancythreshold = 0.05
-
 
 # Scan points are specified with respect to the sensor coordinate frame.
 # Poses are specified with respect to the map coordinate frame.
@@ -53,7 +50,7 @@ def export(scans, poses, dir):
     for i in range(len(scans)):
         scanname = 'scan{:03d}'.format(i)
         scannames.append(scanname)
-        o3.write_point_cloud(
+        o3.io.write_point_cloud(
             os.path.join(dir, scanname + '.' + scanformat), scans[i])
 
         rlconversion = np.array([1, -1, 1])

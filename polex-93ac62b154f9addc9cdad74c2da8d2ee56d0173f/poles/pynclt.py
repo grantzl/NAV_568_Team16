@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 import os
 import warnings
@@ -21,13 +21,13 @@ eulerdef = 'sxyz'
 
 # TODO: Modify these for your workspace
 csvdelimiter = ','
-datadir = '/app/dataset/data/'
-resultdir = '/app/dataset/nclt'
+datadir = '/home/viatorstanley23/NAV_568_Team16/nclt_data/' #'/app/dataset/data/'
+resultdir = '/home/viatorstanley23/NAV_568_Team16/nclt_data/' #'/app/dataset/nclt'
 snapshotfile = 'snapshot.npz'
 sessionfile = 'sessiondata.npz'
 # TODO: Comment out the sessions you are not using
-sessions = [
-    '2012-01-08',
+sessions = ['2012-01-08']
+"""
     '2012-01-15',
     '2012-01-22',
     '2012-02-02',
@@ -55,6 +55,7 @@ sessions = [
     '2013-02-23',
     '2013-04-05'
 ]
+"""
 
 
 lat0 = np.radians(42.293227)
@@ -82,18 +83,18 @@ velodatasize = 8
 
 
 def load_snapshot(sessionname):
-    cloud = o3.PointCloud()
-    trajectory = o3.LineSet()
+    cloud = o3.geometry.PointCloud()
+    trajectory = o3.geometry.LineSet()
     with np.load(os.path.join(resultdir, sessionname, snapshotfile)) as data:
-        cloud.points = o3.Vector3dVector(data['points'])
-        cloud.colors = o3.Vector3dVector(
+        cloud.points = o3.utility.Vector3dVector(data['points'])
+        cloud.colors = o3.utility.Vector3dVector(
             util.intensity2color(data['intensities'] / 255.0))
         
-        trajectory.points = o3.Vector3dVector(data['trajectory'])
+        trajectory.points = o3.utility.Vector3dVector(data['trajectory'])
         lines = np.reshape(range(data['trajectory'].shape[0] - 1), [-1, 1]) \
                 + [0, 1]
-        trajectory.lines = o3.Vector2iVector(lines)
-        trajectory.colors = o3.Vector3dVector(
+        trajectory.lines = o3.utility.Vector2iVector(lines)
+        trajectory.colors = o3.utility.Vector3dVector(
             np.tile([0.0, 0.5, 0.0], [lines.shape[0], 1]))
     return cloud, trajectory
 
@@ -325,4 +326,5 @@ class session:
 
 if __name__ == '__main__':
     for s in sessions:
+    #for s in ['2012-01-08']:
         session(s)
