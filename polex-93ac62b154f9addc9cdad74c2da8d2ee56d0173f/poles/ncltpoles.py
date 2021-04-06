@@ -125,8 +125,8 @@ def save_global_map():
                 scans = []
                 for iscan in range(istart[imap], iend[imap]):
                     xyz, _ = session.get_velo(iscan)
-                    scan = o3.PointCloud()
-                    scan.points = o3.Vector3dVector(xyz)
+                    scan = o3.geometry.PointCloud()
+                    scan.points = o3.utility.Vector3dVector(xyz)
                     scans.append(scan)
                 
                 T_w_mc = np.identity(4)
@@ -185,8 +185,8 @@ def save_local_maps(sessionname, visualize=False):
             scans = []
             for idx, val in enumerate(range(istart[i], iend[i])):
                 xyz, _ = session.get_velo(val)
-                scan = o3.PointCloud()
-                scan.points = o3.Vector3dVector(xyz)
+                scan = o3.geometry.PointCloud()
+                scan.points = o3.utility.Vector3dVector(xyz)
                 scans.append(scan)
 
             T_w_mc = util.project_xy(
@@ -200,7 +200,7 @@ def save_local_maps(sessionname, visualize=False):
             poleparams = poles.detect_poles(occupancymap, mapsize)
 
             if visualize:
-                cloud = o3.PointCloud()
+                cloud = o3.geometry.PointCloud()
                 for T, scan in zip(T_w_r, scans):
                     s = copy.copy(scan)
                     s.transform(T)
@@ -216,7 +216,7 @@ def save_local_maps(sessionname, visualize=False):
                     T_m_p[:3, 3] = [x - 0.5 * a, y - 0.5 * a, zs]
                     pole.transform(T_w_m.dot(T_m_p))
                     polevis.append(pole)
-                o3.draw_geometries(polevis + [cloud, mapboundsvis])
+                o3.visualization.draw_geometries(polevis + [cloud, mapboundsvis])
 
             map = {'poleparams': poleparams, 'T_w_m': T_w_m,
                 'istart': istart[i], 'imid': imid[i], 'iend': iend[i]}
@@ -243,18 +243,18 @@ def view_local_maps(sessionname):
             pole.transform(map['T_w_m'].dot(T_m_p))
             polevis.append(pole)
 
-        accucloud = o3.PointCloud()
+        accucloud = o3.geometry.PointCloud()
         for j in range(map['istart'], map['iend']):
             points, intensities = session.get_velo(j)
-            cloud = o3.PointCloud()
-            cloud.points = o3.Vector3dVector(points)
-            cloud.colors = o3.Vector3dVector(
+            cloud = o3.geometry.PointCloud()
+            cloud.points = o3.utility.Vector3dVector(points)
+            cloud.colors = o3.utility.Vector3dVector(
                 util.intensity2color(intensities / 255.0))
             cloud.transform(session.T_w_r_odo_velo[j])
             accucloud.points.extend(cloud.points)
             accucloud.colors.extend(cloud.colors)
 
-        o3.draw_geometries([accucloud, mapboundsvis] + polevis)
+        o3.visualization.draw_geometries([accucloud, mapboundsvis] + polevis)
 
 
 def evaluate_matches():
@@ -519,7 +519,7 @@ if __name__ == '__main__':
     poles.polesides = range(1, 7+1)
     save_global_map()
     # TODO: Change this to the session you want to find trajectory for
-    session = '2012-01-15'
+    session = '2012-01-08'
     save_local_maps(session)
     # Set visualization to False
     localize(session, False)

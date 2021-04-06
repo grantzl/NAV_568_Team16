@@ -17,14 +17,14 @@ def invert_ht(ht):
 
 
 def create_wire_box(edgelengths, color=[0.0, 0.0, 0.0]):
-    lineset = o3.LineSet()
+    lineset = o3.geometry.LineSet()
     x, y, z = edgelengths
-    lineset.points = o3.Vector3dVector([[0, 0, 0], [x, 0, 0], [0, y, 0], 
+    lineset.points = o3.utility.Vector3dVector([[0, 0, 0], [x, 0, 0], [0, y, 0], 
         [x, y, 0], [0, 0, z], [x, 0, z], [0, y, z], [x, y, z]])
-    lineset.lines = o3.Vector2iVector([[0, 1], [1, 3], [3, 2], [2, 0],
+    lineset.lines = o3.utility.Vector2iVector([[0, 1], [1, 3], [3, 2], [2, 0],
         [0, 4], [1, 5], [3, 7], [2, 6],
         [4, 5], [5, 7], [7, 6], [6, 4]])
-    lineset.colors = o3.Vector3dVector(np.tile(color, [len(lineset.lines), 1]))
+    lineset.colors = o3.utility.Vector3dVector(np.tile(color, [len(lineset.lines), 1]))
     return lineset
 
 
@@ -67,10 +67,10 @@ def project_xy(ht):
 
 
 def xyzi2pc(xyz, intensities=None):
-    pc = o3.PointCloud()
-    pc.points = o3.Vector3dVector(xyz)
+    pc = o3.geometry.PointCloud()
+    pc.points = o3.utility.Vector3dVector(xyz)
     if intensities is not None:
-        pc.colors = o3.Vector3dVector(intensity2color(intensities / 255.0))
+        pc.colors = o3.utility.Vector3dVector(intensity2color(intensities / 255.0))
     return pc
 
 

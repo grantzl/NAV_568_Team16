@@ -53,7 +53,7 @@ def export(scans, poses, dir):
     for i in range(len(scans)):
         scanname = 'scan{:03d}'.format(i)
         scannames.append(scanname)
-        o3.write_point_cloud(
+        o3.io.write_point_cloud(
             os.path.join(dir, scanname + '.' + scanformat), scans[i])
 
         rlconversion = np.array([1, -1, 1])

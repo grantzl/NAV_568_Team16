@@ -76,9 +76,9 @@ def save_local_maps(seq):
             scans = []
             for idx, val in enumerate(range(istart[i], iend[i])):
                 velo = sequence.get_velo(val)
-                scan = o3.PointCloud()
-                scan.points = o3.Vector3dVector(velo[:, :3])
-                scan.colors = o3.Vector3dVector(
+                scan = o3.geometry.PointCloud()
+                scan.points = o3.utility.Vector3dVector(velo[:, :3])
+                scan.colors = o3.utility.Vector3dVector(
                     util.intensity2color(velo[:, 3]))
                 scans.append(scan)
 
@@ -91,11 +91,11 @@ def save_local_maps(seq):
                 scans, T_m_velo, mapshape, mapsize)
             poleparams = poles.detect_poles(occupancymap, mapsize)
 
-            # accuscan = o3.PointCloud()
+            # accuscan = o3.geometry.PointCloud()
             # for j in range(len(scans)):
             #     scans[j].transform(T_w_velo[j])
             #     accuscan.points.extend(scans[j].points)
-            # o3.draw_geometries([accuscan])
+            # o3.visualization.draw_geometries([accuscan])
 
             # import ndshow
             # ndshow.matshow(occupancymap.transpose([2, 0, 1]))
@@ -126,18 +126,18 @@ def view_local_maps(seq):
                 pole.transform(T_w_m.dot(T_m_p))
                 polemap.append(pole)
 
-            accucloud = o3.PointCloud()
+            accucloud = o3.geometry.PointCloud()
             for j in range(map['istart'], map['iend']):
                 velo = sequence.get_velo(j)
-                cloud = o3.PointCloud()
-                cloud.points = o3.Vector3dVector(velo[:, :3])
-                cloud.colors = o3.Vector3dVector(
+                cloud = o3.geometry.PointCloud()
+                cloud.points = o3.utility.Vector3dVector(velo[:, :3])
+                cloud.colors = o3.utility.Vector3dVector(
                     util.intensity2color(velo[:, 3]))
                 cloud.transform(
                     sequence.poses[j].dot(sequence.calib.T_cam0_velo))
                 accucloud.points.extend(cloud.points)
                 accucloud.colors.extend(cloud.colors)
-            o3.draw_geometries([accucloud, mapboundsvis] + polemap)
+            o3.visualization.draw_geometries([accucloud, mapboundsvis] + polemap)
 
 
 def save_global_map(seq):
