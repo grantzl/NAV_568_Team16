@@ -13,7 +13,6 @@ import transforms3d as t3
 import util
 import time
 
-
 T_w_o = np.identity(4)
 T_w_o[:3, :3] = [[0, 1, 0], [1, 0, 0], [0, 0, -1]]
 T_o_w = util.invert_ht(T_w_o)

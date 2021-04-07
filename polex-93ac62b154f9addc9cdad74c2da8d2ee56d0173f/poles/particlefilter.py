@@ -9,19 +9,16 @@ import util
 
 
 class particlefilter:
-    def __init__(self, count, start, posrange, angrange, 
-            polemeans, polevar, T_w_o=np.identity(4)):
+    def __init__(self, count, start, posrange, angrange, polemeans, polevar, T_w_o=np.identity(4)):
         self.p_min = 0.01
-        self.d_max = np.sqrt(-2.0 * polevar * np.log(
-            np.sqrt(2.0 * np.pi * polevar) * self.p_min))
+        self.d_max = np.sqrt(-2.0 * polevar * np.log(np.sqrt(2.0 * np.pi * polevar) * self.p_min))
         self.minneff = 0.5
         self.estimatetype = 'best'
         self.count = count
         r = np.random.uniform(low=0.0, high=posrange, size=[self.count, 1])
         angle = np.random.uniform(low=-np.pi, high=np.pi, size=[self.count, 1])
         xy = r * np.hstack([np.cos(angle), np.sin(angle)])
-        dxyp = np.hstack([xy, np.random.uniform(
-            low=-angrange, high=angrange, size=[self.count, 1])])
+        dxyp = np.hstack([xy, np.random.uniform(low=-angrange, high=angrange, size=[self.count, 1])])
         self.particles = np.matmul(start, util.xyp2ht(dxyp))
         self.weights = np.full(self.count, 1.0 / self.count)
         self.polemeans = polemeans
@@ -35,20 +32,17 @@ class particlefilter:
         return 1.0 / (np.sum(self.weights**2.0) * self.count)
 
     def update_motion(self, mean, cov):
-        T_r0_r1 = util.xyp2ht(
-            np.random.multivariate_normal(mean, cov, self.count))
+        # mean, cov: odometry data [x, y, heading]
+        T_r0_r1 = util.xyp2ht(np.random.multivariate_normal(mean, cov, self.count)) # SE(2) transformation of propagation
         self.particles = np.matmul(self.particles, T_r0_r1)
 
     def update_measurement(self, poleparams, resample=True):
-        n = poleparams.shape[0]
-        polepos_r = np.hstack(
-            [poleparams[:, :2], np.zeros([n, 1]), np.ones([n, 1])]).T
+        n = poleparams.shape[0] # number of poles(landmarks) received
+        polepos_r = np.hstack([poleparams[:, :2], np.zeros([n, 1]), np.ones([n, 1])]).T # online poles(landmarks)
         for i in range(self.count):
             polepos_w = self.particles[i].dot(polepos_r)
-            d, _ = self.kdtree.query(
-                polepos_w[:2].T, k=1, distance_upper_bound=self.d_max)
-            self.weights[i] *= np.prod(
-                self.poledist.pdf(np.clip(d, 0.0, self.d_max)) + 0.1)
+            d, _ = self.kdtree.query(polepos_w[:2].T, k = 1, distance_upper_bound = self.d_max)
+            self.weights[i] *= np.prod(self.poledist.pdf(np.clip(d, 0.0, self.d_max)) + 0.1) # likelihood of measurement
         self.weights /= np.sum(self.weights)
 
         if resample and self.neff < self.minneff:
@@ -57,9 +51,7 @@ class particlefilter:
     def estimate_pose(self):
         if self.estimatetype == 'mean':
             xyp = util.ht2xyp(np.matmul(self.T_o_w, self.particles))
-            mean = np.hstack(
-                [np.average(xyp[:, :2], axis=0, weights=self.weights),
-                    util.average_angles(xyp[:, 2], weights=self.weights)])
+            mean = np.hstack([np.average(xyp[:, :2], axis=0, weights=self.weights), util.average_angles(xyp[:, 2], weights=self.weights)])
             return self.T_w_o.dot(util.xyp2ht(mean))
         if self.estimatetype == 'max':
             return self.particles[np.argmax(self.weights)]
@@ -67,8 +59,7 @@ class particlefilter:
             i = np.argsort(self.weights)[-int(0.1 * self.count):]
             xyp = util.ht2xyp(np.matmul(self.T_o_w, self.particles[i]))
             mean = np.hstack(
-                [np.average(xyp[:, :2], axis=0, weights=self.weights[i]),
-                    util.average_angles(xyp[:, 2], weights=self.weights[i])])                
+                [np.average(xyp[:, :2], axis=0, weights=self.weights[i]), util.average_angles(xyp[:, 2], weights=self.weights[i])])                
             return self.T_w_o.dot(util.xyp2ht(mean))
 
     def resample(self):

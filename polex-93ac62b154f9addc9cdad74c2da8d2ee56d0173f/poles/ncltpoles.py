@@ -56,7 +56,6 @@ T_mc_m = util.invert_ht(T_m_mc)
 T_m_r = T_m_mc.dot(T_mc_r)
 T_r_m = util.invert_ht(T_m_r)
 
-
 def get_globalmapname():
     return 'globalmap_{:.0f}_{:.0f}_{:.0f}'.format(
         n_mapdetections, 10 * poles.minscore, poles.polesides[-1])
@@ -308,8 +307,9 @@ def localize(sessionname, visualize=False):
     # T_w_r_start[:2, 3] = np.mean(session.gps[igps], axis=0)
     T_w_r_start = util.project_xy(
         session.get_T_w_r_gt(session.t_relodo[istart]).dot(T_r_mc)).dot(T_mc_r)
-    filter = particlefilter.particlefilter(5000, 
-        T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
+    filter = particlefilter.particlefilter(5000, T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
+    # Init: particlefilter(count = #particles, start: init pose, posrange: for init, angrange: for init,\
+    # polemeans, polevar, T_w_o=np.identity(4))
     filter.estimatetype = 'best'
     filter.minneff = 0.5
 
@@ -354,8 +354,8 @@ def localize(sessionname, visualize=False):
             relodocov[:2, :2] = session.relodocov[i, :2, :2]
             relodocov[:, 2] = session.relodocov[i, [0, 1, 5], 5]
             relodocov[2, :] = session.relodocov[i, 5, [0, 1, 5]]
-            filter.update_motion(session.relodo[i], relodocov * 2.0**2)
-            T_w_r_est[i] = filter.estimate_pose()
+            filter.update_motion(session.relodo[i], relodocov * 2.0**2)  ### propagate
+            T_w_r_est[i] = filter.estimate_pose()                        ## estimate pose
             t_now = session.t_relodo[i]
             if imap < locdata.shape[0]:
                 t_end = session.t_velo[locdata[imap]['iend']]
@@ -375,15 +375,12 @@ def localize(sessionname, visualize=False):
                     #     len(iactive) - polepos_w[imap].shape[1]))
                     if iactive:
                         t_mid = session.t_velo[locdata[imap]['imid']]
-                        T_w_r_mid = util.project_xy(session.get_T_w_r_odo(
-                            t_mid).dot(T_r_mc)).dot(T_mc_r)
-                        T_w_r_now = util.project_xy(session.get_T_w_r_odo(
-                            t_now).dot(T_r_mc)).dot(T_mc_r)
+                        T_w_r_mid = util.project_xy(session.get_T_w_r_odo(t_mid).dot(T_r_mc)).dot(T_mc_r)
+                        T_w_r_now = util.project_xy(session.get_T_w_r_odo(t_now).dot(T_r_mc)).dot(T_mc_r)
                         T_r_now_r_mid = util.invert_ht(T_w_r_now).dot(T_w_r_mid)
-                        polepos_r_now = T_r_now_r_mid.dot(T_r_m).dot(
-                            polepos_m[imap][:, iactive])
-                        filter.update_measurement(polepos_r_now[:2].T)
-                        T_w_r_est[i] = filter.estimate_pose()
+                        polepos_r_now = T_r_now_r_mid.dot(T_r_m).dot(polepos_m[imap][:, iactive]) # online poles(landmarks): lumbda
+                        filter.update_measurement(polepos_r_now[:2].T)  ### measurement update
+                        T_w_r_est[i] = filter.estimate_pose()           ### estimate
                         if visualize:
                             polepos_w_est = T_w_r_est[i].dot(polepos_r_now)
                             locpoles.set_offsets(polepos_w_est[:2].T)
