@@ -10,4 +10,4 @@ b[4:6] = np.array([[4], [5]])#
 print(b)
 
 A = a, b
-print(block_diag(A))
+print(np.diag([1.5, 1.5]))
