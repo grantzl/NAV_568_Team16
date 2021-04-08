@@ -33,7 +33,7 @@ def intensity2color(intensity):
 
 
 def xyp2ht(xyp):
-    # [x, y, heading] => SE(2) matrix
+    # [x, y, heading] => SE(3) matrix??
     ht = np.tile(np.identity(4), [int(xyp.size / 3), 1, 1])
     cp = np.cos(xyp[..., 2])
     sp = np.sin(xyp[..., 2])

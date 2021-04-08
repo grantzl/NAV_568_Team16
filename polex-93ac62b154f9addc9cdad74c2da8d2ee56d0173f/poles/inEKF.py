@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 
 import warnings
-
 import numpy as np
 import scipy
-
 import util
 
 
@@ -42,8 +40,10 @@ class inEKF:
         self.W = sys.W
         self.V = sys.V
 
-        
-        
+        self.polemeans = polemeans # global map data
+        self.poledist = scipy.stats.norm(loc=0.0, scale=np.sqrt(polevar))
+        self.kdtree = scipy.spatial.cKDTree(polemeans[:, :2], leafsize=3)
+
     @property
     def Ad(self, X):
         # Adjoint of SO3 Adjoint (R) = R
@@ -61,101 +61,50 @@ class inEKF:
                            [-x[1], x[0], 0]], dtype=float)
         return matrix
     
-    def neff(self):
-        return 1.0 / (np.sum(self.weights**2.0) * self.count)
-
-    def prediction(self, u):
-        state(1) = self.mu(1,3)
-        state(2) = self.mu(2,3)
-        state(3) = atan2(self.mu(2,1), self.mu(1,1))
-        H_prev = self.posemat(state)
-        state_pred = self.gfun(state, u)
-        H_pred = self.posemat(state_pred)
-
-        u_se2 = logm(H_prev \ H_pred)
-
-        Adjoint = @(X) [X(1:2,1:2), [X(2,3); -X(1,3)]; 0 0 1]; #THIS STILL NEEDS CONVERSION
-        AdjX = Adjoint(H_prev)
-
-        self.propagation(u_se2, AdjX)
-    
         
-    def propagation(self, u, AdjX):
-        # SE(2) propagation model; the input is u \in se(2) plus noise
-        # propagate mean
-        self.mu_pred = self.mu * expm(u)
-        # propagate covariance
-        self.Sigma_pred = self.Sigma + AdjX * self.W * np.transpose(AdjX)
+    def update_motion(self, u, Q):
+        # Propagation model in SE(2)
+        # u: relatve odometry data [x, y, heading], R^3
+        # Q: noise covariance matrix, R^3x3
+        T_rel = np.array([[np.cos(u[2]), -np.sin(u[2]), u[0]], [np.sin(u[2]), np.cos(u[2]), u[1]], [0, 0, 1]])
+        self.mu_pred = self.mu @ T_rel
+
+        AdjX = np.block([[self.mu[0:2, 0:2], np.array([self.mu[1,2], -self.mu[0,2]]).T], [0, 0, 1]]) # ERROR
+        self.Sigma_pred = self.Sigma + AdjX @ Q @ AdjX.T
     
     
-    def correction(self, Y, Y2, id, id2):
-        # This needs to be a loaded list of relevant landmarks
-        # Passed in the "poleparams"
-        global FIELDINFO        
-        landmark_x = FIELDINFO.MARKER_X_POS(id)
-        landmark_y = FIELDINFO.MARKER_Y_POS(id)    
-        landmark_x2 = FIELDINFO.MARKER_X_POS(id2)
-        landmark_y2 = FIELDINFO.MARKER_Y_POS(id2)
-        
-        # THIS NEEDS TO BE CONVERTED TO PYTHON ARRAYS
+    def update_measurement(self, poleparams):
+        n = poleparams.shape[0] # number of poles(landmarks) received
+        polepos_r = np.hstack([poleparams[:, :2], np.ones([n, 1])]).T # online poles(landmarks)
+        polepos_w = self.mu_pred @ polepos_r
+        d, index = self.kdtree.query(polepos_w[:2].T, k = 1, distance_upper_bound = self.d_max)
+        # len(index) = n: number of poles detected
+        H = np.zeros((n * 2, 3)) # H matrix: 2n x 3
+        v = np.zeros((n * 2, 1)) # innovation vector: 2n x 1
+        # stack H matrix & innovation vector
+        for i in range(n):
+            H[2 * i, :] = [self.polemeans[index[i], 1], -1, 0]
+            H[2 * i + 1, :] =  [-self.polemeans[index[i], 0], 0, -1]
+            v[(2*i):(2*i+1)] = polepos_w[0:2, i] - self.polemeans[index[i], 0:2].T
 
-        G1 = [...
-            0     0     1;
-            0     0     0;
-            0     0     0]
+        N_temp = self.mu_pred @ scipy.linalg.block_diag(self.V, 0) @ self.mu_pred.T # 3 x 3
+        N = N_temp[0:2, 0:2]
+        for i in range(n - 1):
+            N = scipy.linalg.block_diag(N, N_temp[0:2, 0:2])        
+        # N: 2n x 2n block-diagonal matrix
+        S = H @ self.Sigma_pred @ H.T + N # S: 2n x 2n
+        L = self.Sigma_pred @ H.T @ np.linalg.inv(S); # L: 3 x 2n
+            
+        # Update State
+        self.mu = scipy.linalg.expm(wedge(L @ v)) @ self.mu_pred
+            
+        # Update Covariance
+        self.Sigma = (np.identity(3) - L @ H) @ self.Sigma_pred @ (np.identity(3) - L @ H).T + L @ N @ L.T
 
-        G2 = [...
-            0     0     0;
-            0     0     1;
-            0     0     0]
-
-        G3 = [...
-            0    -1     0;
-            1     0     0;
-            0     0     0]
-
-        b = [landmark_x;landmark_y;1]
-        b2 = [landmark_x2;landmark_y2;1]
-
-        H = [...
-            -1  0 landmark_y;
-            0 -1 -landmark_x]
-        H2 = [...
-            -1  0 landmark_y2;
-            0 -1 -landmark_x2]
-
-        H = [H;H2]
-
-
-        #N = blkdiag([10000 0 ;0 10000],[10000 0 ;0 10000])
-
-        R = self.mu_pred(1:2,1:2)
-        R = blkdiag(R, R)
-        nu1 = self.mu_pred*np.transpose(Y) - b
-        nu2 = self.mu_pred*np.transpose(Y2) - b2
-
-        N = R * blkdiag(self.V,self.V) * np.transpose(R)
-
-
-        S = H * self.Sigma_pred * np.transpose(H) + N
-        K = self.Sigma_pred * np.transpose(H) * (S \ np.eye(np.size(S)))
-
-        delta1 = K(1:3,1:2) *[eye(2),zeros(2,1)]* nu1
-        delta2 = K(1:3,3:4) *[eye(2),zeros(2,1)]* nu2
-
-        delta = delta1 + delta2
-        self.mu = expm(delta(1) * G1 + delta(2) * G2 + delta(3) * G3)*self.mu_pred
-
-        self.Sigma = (eye(3) - K * H) * self.Sigma_pred * np.transpose((eye(3) - K * H) + K * N * np.transpose(K)
-    end
-        
-    def H = posemat(self,state):
-        x = state(1)
-        y = state(2)
-        h = state(3)
-        % construct a SE(2) matrix element
-        H = [...
-            cos(h) -sin(h) x;
-            sin(h)  cos(h) y;
-                 0       0 1]
-    end
+def xhat = wedge(x)
+    # wedge operation: convert an R^3 vector to Lie algebra se(2) ????
+    G1 = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])
+    G2 = np.array([[0, 0, 1], [0, 0, 0], [0, 0, 0]])
+    G3 = np.array([[0, 0, 0], [0, 0, 1], [0, 0, 0]])
+    xhat = G1 * x[0] + G2 * x[1] + G3 * x[2]
+    return xhat

@@ -21,7 +21,7 @@ class particlefilter:
         dxyp = np.hstack([xy, np.random.uniform(low=-angrange, high=angrange, size=[self.count, 1])])
         self.particles = np.matmul(start, util.xyp2ht(dxyp))
         self.weights = np.full(self.count, 1.0 / self.count)
-        self.polemeans = polemeans
+        self.polemeans = polemeans # global map data
         self.poledist = scipy.stats.norm(loc=0.0, scale=np.sqrt(polevar))
         self.kdtree = scipy.spatial.cKDTree(polemeans[:, :2], leafsize=3)
         self.T_w_o = T_w_o
@@ -34,6 +34,7 @@ class particlefilter:
     def update_motion(self, mean, cov):
         # mean, cov: odometry data [x, y, heading]
         T_r0_r1 = util.xyp2ht(np.random.multivariate_normal(mean, cov, self.count)) # SE(2) transformation of propagation
+
         self.particles = np.matmul(self.particles, T_r0_r1)
 
     def update_measurement(self, poleparams, resample=True):
@@ -41,7 +42,9 @@ class particlefilter:
         polepos_r = np.hstack([poleparams[:, :2], np.zeros([n, 1]), np.ones([n, 1])]).T # online poles(landmarks)
         for i in range(self.count):
             polepos_w = self.particles[i].dot(polepos_r)
-            d, _ = self.kdtree.query(polepos_w[:2].T, k = 1, distance_upper_bound = self.d_max)
+            d, index = self.kdtree.query(polepos_w[:2].T, k = 1, distance_upper_bound = self.d_max)
+            #delta = polepos_w[:2].T - self.polemeans[index, :2] # innovation
+            #innov = np.hstack([delta, np.zeros([np.shape(delta)[0], 1]), np.zeros([np.shape(delta)[0], 1])]).T
             self.weights[i] *= np.prod(self.poledist.pdf(np.clip(d, 0.0, self.d_max)) + 0.1) # likelihood of measurement
         self.weights /= np.sum(self.weights)
 

@@ -309,7 +309,7 @@ def localize(sessionname, visualize=False):
         session.get_T_w_r_gt(session.t_relodo[istart]).dot(T_r_mc)).dot(T_mc_r)
     filter = particlefilter.particlefilter(5000, T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
     # Init: particlefilter(count = #particles, start: init pose, posrange: for init, angrange: for init,\
-    # polemeans, polevar, T_w_o=np.identity(4))
+    # polemeans: global map data, polevar, T_w_o=np.identity(4))
     filter.estimatetype = 'best'
     filter.minneff = 0.5
 
@@ -354,7 +354,7 @@ def localize(sessionname, visualize=False):
             relodocov[:2, :2] = session.relodocov[i, :2, :2]
             relodocov[:, 2] = session.relodocov[i, [0, 1, 5], 5]
             relodocov[2, :] = session.relodocov[i, 5, [0, 1, 5]]
-            filter.update_motion(session.relodo[i], relodocov * 2.0**2)  ### propagate
+            filter.update_motion(session.relodo[i], relodocov * 2.0**2)  ### propagate: session.relodo[i]=[x,y,p] in R^3
             T_w_r_est[i] = filter.estimate_pose()                        ## estimate pose
             t_now = session.t_relodo[i]
             if imap < locdata.shape[0]:
