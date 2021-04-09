@@ -9,7 +9,7 @@ import subprocess
 import numpy as np
 import open3d as o3
 import scipy.special
-import ray_tracing as rt
+import raytracing as rt
 
 tmpdir = 'tmp'
 scanformat = 'ply'

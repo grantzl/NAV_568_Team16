@@ -520,18 +520,9 @@ if __name__ == '__main__':
     #save_global_map()
     # TODO: Change this to the session you want to find trajectory for
     session = '2012-01-08'
-<<<<<<< HEAD
     save_local_maps(session)
-=======
-    #save_local_maps(session)
->>>>>>> e04441744f0d598ba1fd7c3d60b29e30d46028c1
     # Set visualization to False
     localize(session, True)
     plot_trajectories()
-<<<<<<< HEAD
-    evaluate()    
+    evaluate() 
  
-=======
-    #evaluate()    
- 
->>>>>>> e04441744f0d598ba1fd7c3d60b29e30d46028c1
