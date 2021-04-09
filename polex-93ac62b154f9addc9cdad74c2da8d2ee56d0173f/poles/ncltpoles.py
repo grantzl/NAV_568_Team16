@@ -308,11 +308,11 @@ def localize(sessionname, visualize=False):
     # T_w_r_start[:2, 3] = np.mean(session.gps[igps], axis=0)
     T_w_r_start = util.project_xy(
         session.get_T_w_r_gt(session.t_relodo[istart]).dot(T_r_mc)).dot(T_mc_r)
-    ## filter = particlefilter.particlefilter(5000, T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
+    ##filter = particlefilter.particlefilter(5000, T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
     #   Init: particlefilter(count = #particles, start: init pose, posrange: for init, angrange: for init,\
     #   polemeans: global map data, polevar, T_w_o=np.identity(4))
-    ## filter.estimatetype = 'best'
-    ## filter.minneff = 0.5
+    ##filter.estimatetype = 'best'
+    ##filter.minneff = 0.5
 
     filter = inEKF.inEKF(T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
 
@@ -352,7 +352,8 @@ def localize(sessionname, visualize=False):
         imap += 1
     T_w_r_est = np.full([session.t_relodo.size, 4, 4], np.nan)
     with progressbar.ProgressBar(max_value=session.t_relodo.size) as bar:
-        for i in range(istart, session.t_relodo.size):
+        #for i in range(istart, session.t_relodo.size):
+        for i in range(istart, 1000):
             relodocov = np.empty([3, 3])
             relodocov[:2, :2] = session.relodocov[i, :2, :2]
             relodocov[:, 2] = session.relodocov[i, [0, 1, 5], 5]
@@ -455,7 +456,6 @@ def plot_trajectories():
         except:
             pass
 
-
 def evaluate():
     stats = []
     for sessionname in pynclt.sessions:
@@ -524,5 +524,5 @@ if __name__ == '__main__':
     # Set visualization to False
     localize(session, True)
     plot_trajectories()
-    evaluate()    
+    #evaluate()    
  

@@ -33,7 +33,7 @@ class particlefilter:
 
     def update_motion(self, mean, cov):
         # mean, cov: odometry data [x, y, heading]
-        T_r0_r1 = util.xyp2ht(np.random.multivariate_normal(mean, cov, self.count)) # SE(2) transformation of propagation
+        T_r0_r1 = util.xyp2ht(np.random.multivariate_normal(mean, cov, self.count)) # SE(3) transformation of propagation
 
         self.particles = np.matmul(self.particles, T_r0_r1)
 
