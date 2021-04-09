@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 import copy
 import datetime
@@ -18,6 +18,7 @@ import cluster
 import mapping
 import ndshow
 import particlefilter
+import inEKF
 import poles
 import pynclt
 import util
@@ -31,11 +32,11 @@ import sys
 #           'text.latex.unicode': True}
 
 # TODO: UPDATE THIS!
-localization_name_start = 'localization_3_6_7_2020-04'
+localization_name_start = 'localization_3_6_7'
 
 mapextent = np.array([30.0, 30.0, 5.0])
 mapsize = np.full(3, 0.2)
-mapshape = np.array(mapextent / mapsize, dtype=np.int)
+mapshape = np.array(mapextent / mapsize, dtype=np.int64)
 mapinterval = 1.5
 mapdistance = 1.5
 remapdistance = 10.0
@@ -55,7 +56,6 @@ T_m_mc[:3, 3] = np.hstack([0.5 * mapextent[:2], 0.5])
 T_mc_m = util.invert_ht(T_m_mc)
 T_m_r = T_m_mc.dot(T_mc_r)
 T_r_m = util.invert_ht(T_m_r)
-
 
 def get_globalmapname():
     return 'globalmap_{:.0f}_{:.0f}_{:.0f}'.format(
@@ -308,10 +308,13 @@ def localize(sessionname, visualize=False):
     # T_w_r_start[:2, 3] = np.mean(session.gps[igps], axis=0)
     T_w_r_start = util.project_xy(
         session.get_T_w_r_gt(session.t_relodo[istart]).dot(T_r_mc)).dot(T_mc_r)
-    filter = particlefilter.particlefilter(5000, 
-        T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
-    filter.estimatetype = 'best'
-    filter.minneff = 0.5
+    ##filter = particlefilter.particlefilter(5000, T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
+    #   Init: particlefilter(count = #particles, start: init pose, posrange: for init, angrange: for init,\
+    #   polemeans: global map data, polevar, T_w_o=np.identity(4))
+    ##filter.estimatetype = 'best'
+    ##filter.minneff = 0.5
+
+    filter = inEKF.inEKF(T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
 
     if visualize:
         plt.ion()
@@ -349,13 +352,14 @@ def localize(sessionname, visualize=False):
         imap += 1
     T_w_r_est = np.full([session.t_relodo.size, 4, 4], np.nan)
     with progressbar.ProgressBar(max_value=session.t_relodo.size) as bar:
-        for i in range(istart, session.t_relodo.size):
+        #for i in range(istart, session.t_relodo.size):
+        for i in range(istart, 1000):
             relodocov = np.empty([3, 3])
             relodocov[:2, :2] = session.relodocov[i, :2, :2]
             relodocov[:, 2] = session.relodocov[i, [0, 1, 5], 5]
             relodocov[2, :] = session.relodocov[i, 5, [0, 1, 5]]
-            filter.update_motion(session.relodo[i], relodocov * 2.0**2)
-            T_w_r_est[i] = filter.estimate_pose()
+            filter.update_motion(session.relodo[i], relodocov * 2.0**2)  ### propagate: session.relodo[i]=[x,y,p] in R^3
+            T_w_r_est[i] = filter.estimate_pose()                        ## estimate pose
             t_now = session.t_relodo[i]
             if imap < locdata.shape[0]:
                 t_end = session.t_velo[locdata[imap]['iend']]
@@ -375,15 +379,12 @@ def localize(sessionname, visualize=False):
                     #     len(iactive) - polepos_w[imap].shape[1]))
                     if iactive:
                         t_mid = session.t_velo[locdata[imap]['imid']]
-                        T_w_r_mid = util.project_xy(session.get_T_w_r_odo(
-                            t_mid).dot(T_r_mc)).dot(T_mc_r)
-                        T_w_r_now = util.project_xy(session.get_T_w_r_odo(
-                            t_now).dot(T_r_mc)).dot(T_mc_r)
+                        T_w_r_mid = util.project_xy(session.get_T_w_r_odo(t_mid).dot(T_r_mc)).dot(T_mc_r)
+                        T_w_r_now = util.project_xy(session.get_T_w_r_odo(t_now).dot(T_r_mc)).dot(T_mc_r)
                         T_r_now_r_mid = util.invert_ht(T_w_r_now).dot(T_w_r_mid)
-                        polepos_r_now = T_r_now_r_mid.dot(T_r_m).dot(
-                            polepos_m[imap][:, iactive])
-                        filter.update_measurement(polepos_r_now[:2].T)
-                        T_w_r_est[i] = filter.estimate_pose()
+                        polepos_r_now = T_r_now_r_mid.dot(T_r_m).dot(polepos_m[imap][:, iactive]) # online poles(landmarks): lumbda
+                        filter.update_measurement(polepos_r_now[:2].T)  ### measurement update
+                        T_w_r_est[i] = filter.estimate_pose()           ### estimate
                         if visualize:
                             polepos_w_est = T_w_r_est[i].dot(polepos_r_now)
                             locpoles.set_offsets(polepos_w_est[:2].T)
@@ -403,7 +404,7 @@ def localize(sessionname, visualize=False):
                     imap += 1
             
             if visualize:
-                particles.set_offsets(filter.particles[:, :2, 3])
+                ## particles.set_offsets(filter.particles[:, :2, 3])
                 arrow.set_xy(T_w_r_est[i].dot(arrowdata)[:2].T)
                 x, y = T_w_r_est[i, :2, 3]
                 mapaxes.set_xlim(left=x - viewoffset, right=x + viewoffset)
@@ -450,11 +451,10 @@ def plot_trajectories():
                 plt.gcf().subplots_adjust(
                     bottom=0.13, top=0.98, left=0.145, right=0.98)
                 filename = sessionname + file[18:-4]
-                plt.savefig(os.path.join(trajectorydir, filename + '.svg'))
+                plt.savefig(os.path.join(trajectorydir, filename + '.png'))
                 # plt.savefig(os.path.join(pgfdir, filename + '.pgf'))
         except:
             pass
-
 
 def evaluate():
     stats = []
@@ -517,12 +517,21 @@ def evaluate():
 if __name__ == '__main__':
     poles.minscore = 0.6
     poles.polesides = range(1, 7+1)
-    save_global_map()
+    #save_global_map()
     # TODO: Change this to the session you want to find trajectory for
     session = '2012-01-08'
+<<<<<<< HEAD
     save_local_maps(session)
+=======
+    #save_local_maps(session)
+>>>>>>> e04441744f0d598ba1fd7c3d60b29e30d46028c1
     # Set visualization to False
-    localize(session, False)
+    localize(session, True)
     plot_trajectories()
+<<<<<<< HEAD
     evaluate()    
  
+=======
+    #evaluate()    
+ 
+>>>>>>> e04441744f0d598ba1fd7c3d60b29e30d46028c1

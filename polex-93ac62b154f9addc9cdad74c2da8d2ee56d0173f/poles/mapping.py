@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 import copy
 import os
@@ -9,14 +9,11 @@ import subprocess
 import numpy as np
 import open3d as o3
 import scipy.special
-
-import raytracing as rt
-
+import ray_tracing as rt
 
 tmpdir = 'tmp'
 scanformat = 'ply'
 occupancythreshold = 0.05
-
 
 # Scan points are specified with respect to the sensor coordinate frame.
 # Poses are specified with respect to the map coordinate frame.
