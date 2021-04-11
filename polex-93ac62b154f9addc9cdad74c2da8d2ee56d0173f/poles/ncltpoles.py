@@ -306,23 +306,14 @@ def localize(sessionname, visualize = False):
     # igps = np.clip(igps, 0, session.gps.shape[0] - 1)
     # T_w_r_start = pynclt.T_w_o
     # T_w_r_start[:2, 3] = np.mean(session.gps[igps], axis=0)
-<<<<<<< HEAD
-    T_w_r_start = util.project_xy(
-        session.get_T_w_r_gt(session.t_relodo[istart]).dot(T_r_mc)).dot(T_mc_r)
-=======
     T_w_r_start = util.project_xy(session.get_T_w_r_gt(session.t_relodo[istart]).dot(T_r_mc)).dot(T_mc_r)
->>>>>>> twhsu-stanley-main
     ##filter = particlefilter.particlefilter(5000, T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
     #   Init: particlefilter(count = #particles, start: init pose, posrange: for init, angrange: for init,\
     #   polemeans: global map data, polevar, T_w_o=np.identity(4))
     ##filter.estimatetype = 'best'
     ##filter.minneff = 0.5
 
-<<<<<<< HEAD
-    filter = inEKF.inEKF(T_w_r_start, 2.5, np.radians(5.0), polemap, polevar, T_w_o=T_mc_r)
-=======
     filter = inEKF.inEKF(T_w_r_start, polemap, polevar, T_w_o = T_mc_r)
->>>>>>> twhsu-stanley-main
 
     if visualize:
         plt.ion()
@@ -360,26 +351,16 @@ def localize(sessionname, visualize = False):
 
     steps = 4000
     with progressbar.ProgressBar(max_value=session.t_relodo.size) as bar:
-<<<<<<< HEAD
-        #for i in range(istart, session.t_relodo.size):
-        for i in range(istart, 1000):
-=======
         ##for i in range(istart, session.t_relodo.size):
         for i in range(istart, istart + steps):
->>>>>>> twhsu-stanley-main
             relodocov = np.empty([3, 3])
             relodocov[:2, :2] = session.relodocov[i, :2, :2]
             relodocov[:, 2] = session.relodocov[i, [0, 1, 5], 5]
             relodocov[2, :] = session.relodocov[i, 5, [0, 1, 5]]
-<<<<<<< HEAD
-            filter.update_motion(session.relodo[i], relodocov * 2.0**2)  ### propagate: session.relodo[i]=[x,y,p] in R^3
-            T_w_r_est[i] = filter.estimate_pose()                        ## estimate pose
-=======
             
             filter.update_motion(session.relodo[i], relodocov)  ### relodocov  #propagate: session.relodo[i]=[x,y,p] in R^3
             T_w_r_est[i] = filter.estimate_pose()                    ## estimate pose
             
->>>>>>> twhsu-stanley-main
             t_now = session.t_relodo[i]
             if imap < locdata.shape[0]:
                 t_end = session.t_velo[locdata[imap]['iend']]
@@ -403,15 +384,10 @@ def localize(sessionname, visualize = False):
                         T_w_r_now = util.project_xy(session.get_T_w_r_odo(t_now).dot(T_r_mc)).dot(T_mc_r)
                         T_r_now_r_mid = util.invert_ht(T_w_r_now).dot(T_w_r_mid)
                         polepos_r_now = T_r_now_r_mid.dot(T_r_m).dot(polepos_m[imap][:, iactive]) # online poles(landmarks): lumbda
-<<<<<<< HEAD
-                        filter.update_measurement(polepos_r_now[:2].T)  ### measurement update
-                        T_w_r_est[i] = filter.estimate_pose()           ### estimate
-=======
                         
                         filter.update_measurement(polepos_r_now[:2].T)   ### measurement update
                         T_w_r_est[i] = filter.estimate_pose()            ### estimate
                         
->>>>>>> twhsu-stanley-main
                         if visualize:
                             polepos_w_est = T_w_r_est[i].dot(polepos_r_now)
                             locpoles.set_offsets(polepos_w_est[:2].T)
@@ -544,32 +520,15 @@ def evaluate():
 if __name__ == '__main__':
     poles.minscore = 0.6
     poles.polesides = range(1, 7+1)
-<<<<<<< HEAD
-    #save_global_map()
-=======
 
     #save_global_map()
 
->>>>>>> twhsu-stanley-main
     # TODO: Change this to the session you want to find trajectory for
     session = '2012-01-08'
-<<<<<<< HEAD
-    save_local_maps(session)
-=======
     #save_local_maps(session)
 
->>>>>>> 5bc42f22fa657326db4fb51acd1bc1eef99e606f
     # Set visualization to False
     localize(session, True)
     plot_trajectories()
-<<<<<<< HEAD
-    evaluate() 
-=======
-<<<<<<< HEAD
-    evaluate()    
->>>>>>> twhsu-stanley-main
- 
-=======
     #evaluate()
- 
->>>>>>> 5bc42f22fa657326db4fb51acd1bc1eef99e606f
+

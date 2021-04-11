@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 #!/usr/bin/python3
-=======
-<<<<<<< HEAD
-#!/usr/bin/env python
->>>>>>> twhsu-stanley-main
 
 import warnings
 import numpy as np
@@ -64,16 +59,6 @@ class inEKF:
                 v.append(delta[1])
                 neff_pole += 1
         
-<<<<<<< HEAD
-        if neff_pole == 0:
-            # if no neghboring poles exists, do nothing
-            pass
-
-        elif neff_pole > 0:
-            H = np.array(H).reshape(-1, 3)
-            v = np.array(v).reshape(-1, 1)
-
-=======
     def H = posemat(self,state):
         x = state(1)
         y = state(2)
@@ -157,7 +142,6 @@ class inEKF:
             H = np.array(H).reshape(-1, 3)
             v = np.array(v).reshape(-1, 1)
             
->>>>>>> twhsu-stanley-main
             N_temp = self.mu @ scipy.linalg.block_diag(self.V, 0) @ self.mu.T # 3 x 3
             N = N_temp[0:2, 0:2]
             for i in range(neff_pole - 1):
@@ -165,21 +149,12 @@ class inEKF:
             # N: 2neff x 2neff block-diagonal matrix
             S = H @ self.Sigma @ H.T + N # S: 2neff x 2neff
             L = self.Sigma @ H.T @ np.linalg.inv(S); # L: 3 x 2neff
-<<<<<<< HEAD
-                
-=======
     
->>>>>>> twhsu-stanley-main
             # Update State
             self.mu = scipy.linalg.expm(wedge(L @ v)) @ self.mu
             # Update Covariance
             self.Sigma = (np.identity(3) - L @ H) @ self.Sigma @ (np.identity(3) - L @ H).T + L @ N @ L.T
 
-<<<<<<< HEAD
-    def estimate_pose(self):
-        mu_SE3 = np.block([[scipy.linalg.block_diag(self.mu[0:2, 0:2], -1), np.array([[self.mu[0, 2]], [self.mu[1, 2]], [0]])],\
-                               [0, 0, 0, 1]])
-=======
         else:
             print("neff_pole = ", neff_pole)
     
@@ -217,7 +192,6 @@ class inEKF:
     def estimate_pose(self):
         mu_SE3 = np.block([[scipy.linalg.block_diag(self.mu[0:2, 0:2], -1), np.array([[self.mu[0, 2]], [self.mu[1, 2]], [0]])],\
                            [0, 0, 0, 1]])
->>>>>>> twhsu-stanley-main
         return mu_SE3
 
 def wedge(x):
@@ -230,7 +204,3 @@ def wedge(x):
 
 def xyp2SE2(xyp):
     return np.array([[np.cos(xyp[2]), -np.sin(xyp[2]), xyp[0]], [np.sin(xyp[2]), np.cos(xyp[2]), xyp[1]], [0, 0, 1]])
-<<<<<<< HEAD
-=======
->>>>>>> 5bc42f22fa657326db4fb51acd1bc1eef99e606f
->>>>>>> twhsu-stanley-main
