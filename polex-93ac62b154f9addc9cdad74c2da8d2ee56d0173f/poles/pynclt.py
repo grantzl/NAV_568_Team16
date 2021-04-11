@@ -12,10 +12,7 @@ import transforms3d as t3
 
 import util
 import time
-<<<<<<< HEAD
 import getpass
-=======
->>>>>>> twhsu-stanley-main
 
 T_w_o = np.identity(4)
 T_w_o[:3, :3] = [[0, 1, 0], [1, 0, 0], [0, 0, -1]]
@@ -24,20 +21,10 @@ eulerdef = 'sxyz'
 
 # TODO: Modify these for your workspace
 csvdelimiter = ','
-<<<<<<< HEAD
-#getpass.getuser()
-
 #datadir = '/home/viatorstanley23/NAV_568_Team16/nclt_data/' #'/app/dataset/data/'
-#resultdir = '/home/viatorstanley23/NAV_568_Team16/nclt_data/' #'/app/dataset/nclt'
-datadir = '/home/' + getpass.getuser() + '/NAV_568_Team16/nclt_data/'
-resultdir = '/home/' + getpass.getuser() + '/NAV_568_Team16/nclt_data/'
-print(datadir)
-print(resultdir)
-
-=======
-datadir = '/home/viatorstanley23/NAV_568_Team16/nclt_data/' #'/app/dataset/data/'
-resultdir = '/home/viatorstanley23/NAV_568_Team16/nclt_data/' #'/app/dataset/nclt'
->>>>>>> twhsu-stanley-main
+#resultdir = '/home/viatorstanley23/NAV_568_Team16/nclt_data/' #'/app/dataset/nclt
+datadir = '/home/grantzl/Rob530/src/NAV_568_Team16/nclt_data/'
+resultdir = '/home/grantzl/Rob530/src/NAV_568_Team16/nclt_data/'
 snapshotfile = 'snapshot.npz'
 sessionfile = 'sessiondata.npz'
 # TODO: Comment out the sessions you are not using
@@ -116,7 +103,7 @@ def load_snapshot(sessionname):
 
 def view_snapshot(sessionname):
     cloud, trajectory = load_snapshot(sessionname)
-    o3.visualization.draw_geometries([cloud, trajectory])
+    o3.draw_geometries([cloud, trajectory])
 
 
 def pose2ht(pose):

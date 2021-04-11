@@ -131,4 +131,3 @@ def detect_poles(occupancymap, mapsize):
         ip += 1
 
     return poleparams
-    

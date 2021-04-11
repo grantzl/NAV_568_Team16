@@ -531,4 +531,3 @@ if __name__ == '__main__':
     localize(session, True)
     plot_trajectories()
     #evaluate()
-
