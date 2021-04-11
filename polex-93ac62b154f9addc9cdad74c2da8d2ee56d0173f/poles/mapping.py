@@ -9,7 +9,11 @@ import subprocess
 import numpy as np
 import open3d as o3
 import scipy.special
+<<<<<<< HEAD
 import raytracing as rt
+=======
+import ray_tracing as rt
+>>>>>>> twhsu-stanley-main
 
 tmpdir = 'tmp'
 scanformat = 'ply'
