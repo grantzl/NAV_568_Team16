@@ -44,17 +44,17 @@ def xyp2ht(xyp):
     ht[..., 1, 1] = cp
     return ht.squeeze()
 
-
 def ht2xyp(ht):
     ht = np.tile(ht, [1, 1, 1])
     p = np.arctan2(ht[..., 1, 0], ht[..., 0, 0])
     return np.hstack([ht[..., :2, 3], np.reshape(p, [-1, 1])]).squeeze()
 
-
 def interpolate_ht(ht, t, tq):
     amount = np.clip((tq - t[0]) / np.diff(t), 0.0, 1.0)
     pos = ht[0, :3, 3] + amount * np.diff(ht[:, :3, 3], axis=0).squeeze()
-    q = [pq.Quaternion(matrix=m) for m in ht]
+    #for m in ht:
+        #print(m)
+    q = [pq.Quaternion(matrix = m) for m in ht]
     qq = pq.Quaternion.slerp(q[0], q[1], amount=amount)
     return t3.affines.compose(pos, qq.rotation_matrix, np.ones(3))
 

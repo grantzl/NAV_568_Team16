@@ -43,8 +43,9 @@ class particlefilter:
         for i in range(self.count):
             polepos_w = self.particles[i].dot(polepos_r)
             d, index = self.kdtree.query(polepos_w[:2].T, k = 1, distance_upper_bound = self.d_max)
-            #delta = polepos_w[:2].T - self.polemeans[index, :2] # innovation
-            #innov = np.hstack([delta, np.zeros([np.shape(delta)[0], 1]), np.zeros([np.shape(delta)[0], 1])]).T
+            
+            #np.all(index < self.kdtree.n)
+
             self.weights[i] *= np.prod(self.poledist.pdf(np.clip(d, 0.0, self.d_max)) + 0.1) # likelihood of measurement
         self.weights /= np.sum(self.weights)
 
@@ -61,8 +62,7 @@ class particlefilter:
         if self.estimatetype == 'best':
             i = np.argsort(self.weights)[-int(0.1 * self.count):]
             xyp = util.ht2xyp(np.matmul(self.T_o_w, self.particles[i]))
-            mean = np.hstack(
-                [np.average(xyp[:, :2], axis=0, weights=self.weights[i]), util.average_angles(xyp[:, 2], weights=self.weights[i])])                
+            mean = np.hstack([np.average(xyp[:, :2], axis=0, weights=self.weights[i]), util.average_angles(xyp[:, 2], weights=self.weights[i])])                
             return self.T_w_o.dot(util.xyp2ht(mean))
 
     def resample(self):

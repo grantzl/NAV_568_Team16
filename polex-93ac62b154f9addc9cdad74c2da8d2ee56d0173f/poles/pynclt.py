@@ -56,7 +56,6 @@ sessions = ['2012-01-08']
 ]
 """
 
-
 lat0 = np.radians(42.293227)
 lon0 = np.radians(-83.709657)
 re = 6378135.0
@@ -325,5 +324,4 @@ class session:
 
 if __name__ == '__main__':
     for s in sessions:
-    #for s in ['2012-01-08']:
         session(s)

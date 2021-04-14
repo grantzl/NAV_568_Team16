@@ -348,7 +348,7 @@ def localize(sessionname, visualize = False):
         imap += 1
     T_w_r_est = np.full([session.t_relodo.size, 4, 4], np.nan)
     
-    #steps = 5000
+    steps = 5000
     x_sigma_contour = np.zeros(session.t_relodo.size)
     y_sigma_contour = np.zeros(session.t_relodo.size)
     p_sigma_contour = np.zeros(session.t_relodo.size)
@@ -545,7 +545,7 @@ def evaluate():
     np.savez(os.path.join(pynclt.resultdir, get_evalfile()), stats=stats)
     
     mapdata = np.load(os.path.join(pynclt.resultdir, get_globalmapname() + '.npz'))
-    print('session \t f\te_pos \trmse_pos \te_ang \te_rmse')
+    print('session \t f\te_pos \trmse_pos \te_ang \trmse_ang')
     row = '{session} \t{f} \t{poserror} \t{posrmse} \t{angerror} \t{angrmse}'
     for i, stat in enumerate(stats):
         print(row.format(
@@ -564,7 +564,7 @@ if __name__ == '__main__':
     #save_global_map()
 
     # TODO: Change this to the session you want to find trajectory for
-    session = '2012-01-15'
+    session = '2012-01-08'
     #save_local_maps(session)
 
     # Set visualization to False
