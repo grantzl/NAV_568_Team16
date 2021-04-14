@@ -18,6 +18,7 @@ Landmarks extraction and mapping are implemented using the algorithm proposed in
 
 
 ![image](https://user-images.githubusercontent.com/78635240/114791206-1e886100-9d54-11eb-88e6-7f145a342863.png)
+
 Fig. 1: global reference map
 
 # RI-EKF Localization
@@ -36,7 +37,9 @@ Once complete downloading the data from NCLT dataset and building the dependenci
 
 
 ![2012-01-08_NEES](https://user-images.githubusercontent.com/78635240/114791112-e719b480-9d53-11eb-9be5-4881533e86b9.png)
+
 Fig. 2: the NEES plot 
 
 ![2012-01-08_2021-04-13_23-55-39](https://user-images.githubusercontent.com/78635240/114791134-f7319400-9d53-11eb-87d9-6b327767e1c6.png)
+
 Fig. 3: estimated and ground truth trajectories 
