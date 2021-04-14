@@ -17,13 +17,10 @@ class inEKF:
         self.polevar = polevar
  
         # TO DO: tune this parameter:
-        self.V = np.diag([polevar*4, polevar*4])
+        self.V = np.diag([polevar, polevar])
 
         dist_metric = DistanceMetric.get_metric('mahalanobis', V = self.V)
         self.balltree = BallTree(polemeans[:, :2], leafsize = 3, metric = dist_metric)
-        
-        #self.T_w_o = T_w_o[0:3, 0:3]
-        #self.T_o_w = np.linalg.inv(self.T_w_o)
         
     def update_motion(self, u, cov):
         # Propagation model in SE(2)
@@ -35,9 +32,9 @@ class inEKF:
         Q = np.array([[cov[2,2], cov[2,0], cov[2, 1]],\
                       [cov[0,2], cov[0,0], cov[0, 1]],\
                       [cov[1,2], cov[1,0], cov[1, 1]]])
-
+        
         # predict covariance
-        Adj = np.block([[self.mu[0:2, 0:2], np.array([[self.mu[1,2]], [-self.mu[0,2]]])], [0, 0, 1]])
+        Adj = np.block([[1, 0, 0], [np.array([[self.mu[1,2]], [-self.mu[0,2]]]), self.mu[0:2, 0:2]]])
         self.Sigma = self.Sigma + Adj @ Q @ Adj.T
 
         # predict state
@@ -58,7 +55,7 @@ class inEKF:
         neff_pole = 0
         for i in range(n):
             # Important: Accept poles with Mahalanobis distance < 3 (3-sigma)
-            if d[i] <= 3:
+            if d[i] <= np.sqrt(9.21):
                 H.append([self.polemeans[index[i], 1][0], -1, 0])
                 H.append([-self.polemeans[index[i], 0][0], 0, -1])
                 delta = polepos_w[0:2, i] - [self.polemeans[index[i], 0][0], self.polemeans[index[i], 1][0]]
@@ -83,39 +80,8 @@ class inEKF:
             # Update Covariance
             self.Sigma = (np.identity(3) - L @ H) @ self.Sigma @ (np.identity(3) - L @ H).T + L @ N @ L.T
 
-        else:
-            print("neff_pole = ", neff_pole)
-    
-    """
-    def update_measurement_sequential(self, poleparams):
-        # poleparams: online poles(landmarks) detected by sensor 
-        n = poleparams.shape[0] # number of poles(landmarks) detected
-        polepos_r = np.hstack([poleparams[:, 0:2], np.ones((n, 1))]).T 
-        polepos_w = self.mu @ polepos_r
-        d_max = np.sqrt(-2.0 * self.polevar * np.log(np.sqrt(2.0 * np.pi * self.polevar) * self.p_min))
-        d, index = self.kdtree.query(polepos_w[:2].T, k = 1, distance_upper_bound = d_max)
-        # len(index) = n: number of poles detected
-        
-
-        for i in range(n):
-            if index[i] < self.kdtree.n:
-                H = np.array([[self.kdtree.data[index[i], 1], -1, 0], [-self.kdtree.data[index[i], 0], 0, -1]]) # 2 x 3
-                delta = polepos_w[0:2, i] - self.kdtree.data[index[i], 0:2].T
-                v = np.array([[delta[0]], [delta[1]]])
-                
-                V = np.diag([100, 100])
-
-                N_temp = self.mu @ scipy.linalg.block_diag(V, 0) @ self.mu.T # 3 x 3
-                N = N_temp[0:2, 0:2]
-                # N: 2neff x 2neff block-diagonal matrix
-                S = H @ self.Sigma @ H.T + N # S: 2neff x 2neff
-                L = self.Sigma @ H.T @ np.linalg.inv(S); # L: 3 x 2neff
-                        
-                # Update State
-                self.mu = scipy.linalg.expm(wedge(L @ v)) @ self.mu
-                # Update Covariance
-                self.Sigma = (np.identity(3) - L @ H) @ self.Sigma @ (np.identity(3) - L @ H).T + L @ N @ L.T
-    """
+        #else:
+            #print("neff_pole = ", neff_pole)
 
     def estimate_pose(self):
         mu_SE3 = np.block([[scipy.linalg.block_diag(self.mu[0:2, 0:2], -1), np.array([[self.mu[0, 2]], [self.mu[1, 2]], [0]])],\
