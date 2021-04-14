@@ -17,7 +17,7 @@ class inEKF:
         self.polevar = polevar
  
         # TO DO: tune this parameter:
-        self.V = np.diag([polevar*4, polevar*4])
+        self.V = np.diag([polevar, polevar])
 
         dist_metric = DistanceMetric.get_metric('mahalanobis', V = self.V)
         self.balltree = BallTree(polemeans[:, :2], leafsize = 3, metric = dist_metric)
@@ -37,7 +37,8 @@ class inEKF:
                       [cov[1,2], cov[1,0], cov[1, 1]]])
 
         # predict covariance
-        Adj = np.block([[self.mu[0:2, 0:2], np.array([[self.mu[1,2]], [-self.mu[0,2]]])], [0, 0, 1]])
+        #Adj = np.block([[self.mu[0:2, 0:2], np.array([[self.mu[1,2]], [-self.mu[0,2]]])], [0, 0, 1]])
+        Adj = np.block([[1, 0, 0], [np.array([[self.mu[1,2]], [-self.mu[0,2]]]), self.mu[0:2, 0:2]]])
         self.Sigma = self.Sigma + Adj @ Q @ Adj.T
 
         # predict state
@@ -58,7 +59,7 @@ class inEKF:
         neff_pole = 0
         for i in range(n):
             # Important: Accept poles with Mahalanobis distance < 3 (3-sigma)
-            if d[i] <= 3:
+            if d[i] <= np.sqrt(9.21):
                 H.append([self.polemeans[index[i], 1][0], -1, 0])
                 H.append([-self.polemeans[index[i], 0][0], 0, -1])
                 delta = polepos_w[0:2, i] - [self.polemeans[index[i], 0][0], self.polemeans[index[i], 1][0]]

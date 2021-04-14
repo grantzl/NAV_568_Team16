@@ -28,7 +28,7 @@ resultdir = '/home/grantzl/Rob530/src/NAV_568_Team16/nclt_data/'
 snapshotfile = 'snapshot.npz'
 sessionfile = 'sessiondata.npz'
 # TODO: Comment out the sessions you are not using
-sessions = ['2012-01-08']
+sessions = ['2012-01-22']
 """
     '2012-01-15',
     '2012-01-22',
