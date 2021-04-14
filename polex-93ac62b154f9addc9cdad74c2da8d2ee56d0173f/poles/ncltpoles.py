@@ -301,7 +301,7 @@ def localize(sessionname, visualize = False):
         pad = np.hstack([np.zeros([n, 1]), np.ones([n, 1])])
         polepos_m.append(np.hstack([locdata[i]['poleparams'][:, :2], pad]).T)
         polepos_w.append(locdata[i]['T_w_m'].dot(polepos_m[i]))
-    istart = 14500
+    istart = 0
     # igps = np.searchsorted(session.t_gps, session.t_relodo[istart]) + [-4, 1]
     # igps = np.clip(igps, 0, session.gps.shape[0] - 1)
     # T_w_r_start = pynclt.T_w_o
@@ -349,10 +349,17 @@ def localize(sessionname, visualize = False):
         imap += 1
     T_w_r_est = np.full([session.t_relodo.size, 4, 4], np.nan)
 
-    steps = 4000
+    #steps = 5000
+    x_sigma_contour = np.zeros(session.t_relodo.size)
+    y_sigma_contour = np.zeros(session.t_relodo.size)
+    p_sigma_contour = np.zeros(session.t_relodo.size)
+    x_err = np.zeros(session.t_relodo.size)
+    y_err = np.zeros(session.t_relodo.size)
+    p_err = np.zeros(session.t_relodo.size)
+    
     with progressbar.ProgressBar(max_value=session.t_relodo.size) as bar:
-        ##for i in range(istart, session.t_relodo.size):
-        for i in range(istart, istart + steps):
+        for i in range(istart, session.t_relodo.size):
+        #for i in range(istart, istart + steps):
             relodocov = np.empty([3, 3])
             relodocov[:2, :2] = session.relodocov[i, :2, :2]
             relodocov[:, 2] = session.relodocov[i, [0, 1, 5], 5]
@@ -404,7 +411,20 @@ def localize(sessionname, visualize = False):
                             #     visfilter.weights.reshape(
                             #         [gridsize, gridsize])))
                             # weightimage.autoscale()
+
+                            
                     imap += 1
+            
+            # estimattion error
+            T_w_r_gt_i = util.project_xy(session.get_T_w_r_gt(session.t_relodo[i]).dot(T_r_mc)).dot(T_mc_r) # ground truth pose
+            x_err[i] = T_w_r_est[i, 0, 3] - T_w_r_gt_i[0, 3]
+            y_err[i] = T_w_r_est[i, 1, 3] - T_w_r_gt_i[1, 3]
+            p_err[i] = np.arctan2(T_w_r_est[i, 1, 0], T_w_r_est[i, 0, 0]) - np.arctan2(T_w_r_gt_i[1, 0], T_w_r_gt_i[0, 0])
+            p_err[i] = np.arctan2(np.sin(p_err[i]), np.cos(p_err[i])) # wrap to [-pi, pi]
+            # 3-sigma contour
+            x_sigma_contour[i] = 3 * np.sqrt(filter.Sigma[1,1])
+            y_sigma_contour[i] = 3 * np.sqrt(filter.Sigma[2,2])
+            p_sigma_contour[i] = 3 * np.sqrt(filter.Sigma[0,0])
 
             if visualize:
                 ## particles.set_offsets(filter.particles[:, :2, 3])
@@ -418,6 +438,31 @@ def localize(sessionname, visualize = False):
                 figure.canvas.draw_idle()
                 figure.canvas.flush_events()
             bar.update(i)
+
+    # Plot the NEES (normalized estimation error squared) graph
+    plt.figure()
+    plt.subplot(311)
+    plt.plot(x_err, 'r')
+    plt.plot(x_sigma_contour,'b')
+    plt.plot(-x_sigma_contour,'b')
+    plt.ylabel('x error')
+    plt.xlabel('step')
+
+    plt.subplot(312)
+    plt.plot(y_err, 'r')
+    plt.plot(y_sigma_contour,'b')
+    plt.plot(-y_sigma_contour,'b')
+    plt.ylabel('y error')
+    plt.xlabel('step')
+
+    plt.subplot(313)
+    plt.plot(p_err, 'r')
+    plt.plot(p_sigma_contour,'b')
+    plt.plot(-p_sigma_contour,'b')
+    plt.ylabel('theta error')
+    plt.xlabel('step')
+    plt.savefig("NEES.png")
+
     filename = os.path.join(session.dir, get_locfileprefix() \
         + datetime.datetime.now().strftime('_%Y-%m-%d_%H-%M-%S.npz'))
     np.savez(filename, T_w_r_est=T_w_r_est)
@@ -454,7 +499,7 @@ def plot_trajectories():
                     bottom=0.13, top=0.98, left=0.145, right=0.98)
                 filename = sessionname + file[18:-4]
                 plt.savefig(os.path.join(trajectorydir, filename + '.png'))
-                # plt.savefig(os.path.join(pgfdir, filename + '.pgf'))
+                #plt.savefig(os.path.join(trajectorydir, 'testing' + '.png'))
         except:
             pass
 
@@ -521,13 +566,13 @@ if __name__ == '__main__':
     poles.minscore = 0.6
     poles.polesides = range(1, 7+1)
 
-    #save_global_map()
+    save_global_map()
 
     # TODO: Change this to the session you want to find trajectory for
     session = '2012-01-08'
     #save_local_maps(session)
 
     # Set visualization to False
-    localize(session, True)
-    plot_trajectories()
+    #localize(session, True)
+    #plot_trajectories()
     #evaluate()
