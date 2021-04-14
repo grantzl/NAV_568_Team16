@@ -25,7 +25,7 @@ Fig. 1: global reference map
 The RI-EKF localization is implemented using ```inEKF.py```. In ```inEKF.py```:
 1. robot pose in SE(2) is considered
 2. for the process model, the odometry data are used to propagate the states
-3. for the measurement model, a ball tree search algorithm is employed for data association between online lidar scans and the landmarks in the global reference map. Mahalanobis distance is used as the distance metric and the landmarks are accepted/rejected based on Chi-squre tests.
+3. for the measurement model, a ball tree search algorithm is employed for data association between online lidar scans and the landmarks in the global reference map. Mahalanobis distance is used as the distance metric and the landmarks are accepted/rejected based on Chi-square tests.
 
 # Running the Code
 Once complete downloading the data from NCLT dataset and building the dependencies, run ```ncltpoles.py``` for the overall maping and localization process. In ```ncltpoles.py```:
