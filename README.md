@@ -14,7 +14,7 @@ This project aims at evaluating robustness of the right-invariant extended Kalma
 The NCLT Dataset is a large-scale, long-term dataset collected on the North Campus of the University of Michigan. The dataset consists of vision data, lidar data, GPS, and IMU data collected using a Segway robot. The reason for choosing this dataset is that it includes a wide range of long-term environmental changes, such as seasonal changes, lighting changes, and structural changes. The data can be downloaded [here](http://robots.engin.umich.edu/nclt/index.html). Use the provided ```downloader.py``` to download sensor data, Velodyne(3D lidar)data, and the ground truth.
 
 # Landmarks Extraction and Mapping
-Landmarks extraction and mapping are implemented using the algorithm proposed in [this paper](http://ais.informatik.uni-freiburg.de/publications/papers/schaefer19ecmr.pdf) (Schaefer et al. 2019). Use Python code in [this repositpry](https://github.com/acschaefer/polex) and install all the required modules to generate the global reference map. The resulting global map is shown in Fig. 1.
+Landmarks extraction and mapping are implemented using the algorithm proposed in [this paper](http://ais.informatik.uni-freiburg.de/publications/papers/schaefer19ecmr.pdf) (Schaefer et al. 2019). Use Python code in [this repository](https://github.com/acschaefer/polex) and install all the required modules to generate the global reference map. The resulting global map is shown in Fig. 1.
 
 
 Fig. 1: global reference map
