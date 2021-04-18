@@ -26,6 +26,7 @@ class particlefilter:
         self.kdtree = scipy.spatial.cKDTree(polemeans[:, :2], leafsize=3)
         self.T_w_o = T_w_o
         self.T_o_w = util.invert_ht(self.T_w_o)
+        self.Sigma = np.eye(3) * 1e-13
 
     @property
     def neff(self):
@@ -62,7 +63,10 @@ class particlefilter:
             i = np.argsort(self.weights)[-int(0.1 * self.count):]
             xyp = util.ht2xyp(np.matmul(self.T_o_w, self.particles[i]))
             mean = np.hstack(
-                [np.average(xyp[:, :2], axis=0, weights=self.weights[i]), util.average_angles(xyp[:, 2], weights=self.weights[i])])                
+                [np.average(xyp[:, :2], axis=0, weights=self.weights[i]), util.average_angles(xyp[:, 2], weights=self.weights[i])])
+            zero_mean_particles = xyp - mean
+            zero_mean_particles[:,2] %= 2*np.pi   #wrap between 0 and 2pi
+            self.Sigma = (1/xyp.shape[0])*zero_mean_particles.T @ zero_mean_particles
             return self.T_w_o.dot(util.xyp2ht(mean))
 
     def resample(self):
